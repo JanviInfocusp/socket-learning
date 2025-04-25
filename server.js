@@ -10,41 +10,71 @@ const io = new Server(server);
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Store document state
-const documentState = [];
+/**
+ * DocumentManager - Handles the shared document state
+ * Maintains the document content and processes operations
+ */
+class DocumentManager {
+  constructor() {
+    this.content = [];  // Array of CRDT characters
+  }
 
+  // Process a batch of operations
+  processBatch(operations) {
+    operations.forEach(op => {
+      if (op.type === 'insert') {
+        this.insertChar(op.char);
+      } else if (op.type === 'delete') {
+        this.deleteChar(op.char);
+      }
+    });
+  }
+
+  // Insert a character at the correct position
+  insertChar(char) {
+    let index = 0;
+    while (index < this.content.length && 
+           this.comparePositions(this.content[index].position, char.position)) {
+      index++;
+    }
+    this.content.splice(index, 0, char);
+  }
+
+  // Delete a character
+  deleteChar(char) {
+    const index = this.content.findIndex(c => 
+      c.siteId === char.siteId && c.clock === char.clock
+    );
+    if (index !== -1) {
+      this.content.splice(index, 1);
+    }
+  }
+
+  // Compare position identifiers
+  comparePositions(pos1, pos2) {
+    for (let i = 0; i < Math.min(pos1.length, pos2.length); i++) {
+      if (pos1[i] < pos2[i]) return true;
+      if (pos1[i] > pos2[i]) return false;
+    }
+    return pos1.length < pos2.length;
+  }
+}
+
+// Create document manager
+const docManager = new DocumentManager();
+
+// Handle socket connections
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-  // Send initial document state when requested
+  // Send current document state
   socket.on('request-document', (callback) => {
-    callback(documentState);
+    callback(docManager.content);
   });
 
-  // Handle batch operations
+  // Process and broadcast operations
   socket.on('batch-operation', (operations) => {
-    operations.forEach(op => {
-      if (op.type === 'insert') {
-        // Insert at correct position in documentState
-        let index = 0;
-        while (index < documentState.length && 
-               comparePos(documentState[index].pos, op.char.pos)) {
-          index++;
-        }
-        documentState.splice(index, 0, op.char);
-      } else if (op.type === 'delete') {
-        // Find and remove character from documentState
-        const index = documentState.findIndex(char => 
-          char.siteId === op.char.siteId && 
-          char.clock === op.char.clock
-        );
-        if (index !== -1) {
-          documentState.splice(index, 1);
-        }
-      }
-    });
-
-    // Broadcast to other clients
+    docManager.processBatch(operations);
     socket.broadcast.emit('batch-operation', operations);
   });
 
@@ -53,17 +83,19 @@ io.on('connection', (socket) => {
   });
 });
 
-// Helper function to compare positions
-function comparePos(pos1, pos2) {
-  for (let i = 0; i < Math.min(pos1.length, pos2.length); i++) {
-    if (pos1[i] < pos2[i]) return true;
-    if (pos1[i] > pos2[i]) return false;
-  }
-  return pos1.length < pos2.length;
+// Start server with automatic port selection
+function startServer(port) {
+  server.listen(port)
+    .on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        console.log(`Port ${port} is busy, trying ${port + 1}`);
+        startServer(port + 1);
+      }
+    })
+    .on('listening', () => {
+      const actualPort = server.address().port;
+      console.log(`Server running on http://localhost:${actualPort}`);
+    });
 }
 
-const PORT = process.env.PORT || 3031;
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Open http://localhost:${PORT} to use the collaborative editor`);
-});
+startServer(3000);
