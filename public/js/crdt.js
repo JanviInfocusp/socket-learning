@@ -1,115 +1,100 @@
-/**
- * DrawingCRDT - A CRDT implementation for collaborative drawing and text editing
- */
-class DrawingCRDT {
+class CRDTChar {
+  constructor(value, pos, siteId, clock) {
+    this.value = value;
+    this.pos = pos;      // Position identifier array
+    this.siteId = siteId;// Unique site identifier
+    this.clock = clock;  // Logical clock
+  }
+}
+
+class CRDT {
   constructor(siteId) {
+    this.struct = [];    // Array of CRDTChar objects
     this.siteId = siteId;
-    this.operations = new Map();
-    this.sequence = 0;
-    this.textContent = ""; // Simple text representation (will be replaced by YJS)
+    this.clock = 0;
+    this.base = 32;     // Base for generating position identifiers
+    this.boundary = 10;  // Minimum spacing between positions
   }
-  
-  // Generate a unique operation ID
-  generateOperationId() {
-    return `${this.siteId}:${Date.now()}:${this.sequence++}`;
-  }
-  
-  // Create a new stroke operation
-  createStrokeOperation(points, color, lineWidth) {
-    const operation = {
-      id: this.generateOperationId(),
-      type: 'stroke',
-      timestamp: Date.now(),
-      points: [...points], // Clone the points array
-      color: color,
-      lineWidth: lineWidth
-    };
+
+  // Generate position identifier between two positions
+  generatePosBetween(pos1, pos2) {
+    if (!pos1) pos1 = [];
+    if (!pos2) pos2 = [];
     
-    this.operations.set(operation.id, operation);
-    return operation;
+    let newPos = pos1.slice();
+    let id = this.generateIdBetween(
+      pos1[0] || 0,
+      pos2[0] || this.base,
+      newPos.length
+    );
+    
+    newPos.push(id);
+    return newPos;
   }
-  
-  // Add a point to an existing stroke
-  addPointToStroke(strokeId, point) {
-    const operation = this.operations.get(strokeId);
-    if (operation && operation.type === 'stroke') {
-      operation.points.push(point);
-      operation.timestamp = Date.now(); // Update timestamp
-      return operation;
+
+  // Generate a number between two values
+  generateIdBetween(min, max, level) {
+    if (max - min < this.boundary) {
+      max = min + this.boundary * 2;
     }
-    return null;
+    let id = Math.floor((min + max) / 2);
+    return id;
   }
-  
-  // Create a text operation (simple implementation)
-  createTextOperation(text, language) {
-    const operation = {
-      id: this.generateOperationId(),
-      type: 'text',
-      timestamp: Date.now(),
-      text: text,
-      language: language
-    };
-    
-    this.operations.set(operation.id, operation);
-    this.textContent = text;
-    return operation;
+
+  // Local insert operation
+  localInsert(value, index) {
+    const char = this.insert(value, index);
+    return char;
   }
-  
-  // Apply an external operation
-  applyOperation(operation) {
-    // If operation already exists, merge based on timestamps
-    if (this.operations.has(operation.id)) {
-      const existingOp = this.operations.get(operation.id);
-      
-      // For strokes, merge points if the incoming operation is newer
-      if (operation.type === 'stroke' && operation.timestamp > existingOp.timestamp) {
-        // In a real implementation, you might have more complex logic here
-        existingOp.points = operation.points;
-        existingOp.timestamp = operation.timestamp;
-      }
-      
-      // For text, update content if the incoming operation is newer
-      if (operation.type === 'text' && operation.timestamp > existingOp.timestamp) {
-        existingOp.text = operation.text;
-        existingOp.timestamp = operation.timestamp;
-        this.textContent = operation.text;
-      }
-    } else {
-      // If it's a new operation, just add it
-      this.operations.set(operation.id, operation);
-      
-      // Update text content if needed
-      if (operation.type === 'text') {
-        this.textContent = operation.text;
-      }
+
+  // Remote insert operation
+  remoteInsert(char) {
+    let index = this.findInsertIndex(char);
+    this.struct.splice(index, 0, char);
+    return index;
+  }
+
+  // Find index to insert character
+  findInsertIndex(char) {
+    let index = 0;
+    while (index < this.struct.length && this.comparePos(this.struct[index].pos, char.pos)) {
+      index++;
     }
-    
-    return this.operations.get(operation.id);
+    return index;
   }
-  
-  // Get all operations as an array
-  getAllOperations() {
-    return Array.from(this.operations.values());
-  }
-  
-  // Get latest text operation for a specific language
-  getLatestTextOperation(language) {
-    let latest = null;
-    let latestTimestamp = 0;
-    
-    for (const op of this.operations.values()) {
-      if (op.type === 'text' && op.language === language && op.timestamp > latestTimestamp) {
-        latest = op;
-        latestTimestamp = op.timestamp;
-      }
+
+  // Compare position identifiers
+  comparePos(pos1, pos2) {
+    for (let i = 0; i < Math.min(pos1.length, pos2.length); i++) {
+      if (pos1[i] < pos2[i]) return true;
+      if (pos1[i] > pos2[i]) return false;
     }
-    
-    return latest;
+    return pos1.length < pos2.length;
   }
-  
-  // Clear all operations
-  clear() {
-    this.operations.clear();
-    this.textContent = "";
+
+  // Insert operation
+  insert(value, index) {
+    this.clock++;
+    
+    const posBefore = index > 0 ? this.struct[index - 1].pos : [];
+    const posAfter = index < this.struct.length ? this.struct[index].pos : [];
+    const newPos = this.generatePosBetween(posBefore, posAfter);
+    
+    const char = new CRDTChar(value, newPos, this.siteId, this.clock);
+    this.struct.splice(index, 0, char);
+    
+    return char;
+  }
+
+  // Delete operation
+  delete(index) {
+    const char = this.struct[index];
+    this.struct.splice(index, 1);
+    return char;
+  }
+
+  // Get text content
+  toString() {
+    return this.struct.map(char => char.value).join('');
   }
 }

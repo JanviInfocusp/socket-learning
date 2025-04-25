@@ -1,7 +1,7 @@
 {
   "name": "collaborative-code-editor",
   "version": "1.0.0",
-  "description": "Collaborative code editor using Socket.IO and YJS",
+  "description": "Collaborative code editor using Socket.IO and CRDT",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -10,7 +10,6 @@
   "dependencies": {
     "express": "^4.18.2",
     "socket.io": "^4.7.2",
-    "yjs": "^13.6.7",
     "codemirror": "^5.65.13"
   },
   "devDependencies": {
