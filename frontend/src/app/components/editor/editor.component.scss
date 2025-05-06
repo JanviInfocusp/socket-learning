@@ -1,0 +1,15 @@
+.editor-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  
+  .toolbar {
+    padding: 8px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .code-editor {
+    flex: 1;
+    overflow: auto;
+  }
+}
