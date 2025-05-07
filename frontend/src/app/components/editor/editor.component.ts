@@ -31,9 +31,16 @@ export class EditorComponent implements AfterViewInit {
   private ytext: Y.Text;
   private editorView?: EditorView;
   selectedLanguage = 'javascript';
+  userInfo: { name: string; color: string };
 
   constructor(private wsService: WebsocketService) {
     this.ytext = this.wsService.getDoc().getText('collaborative-editor');
+    this.userInfo = this.wsService.getUserInfo();
+
+    this.wsService.getProvider().awareness.on('change', () => {
+      const states = Array.from(this.wsService.getProvider().awareness.getStates().values());
+      console.log('Connected users:', states.map(state => state['user']));
+    });
   }
 
   ngAfterViewInit() {

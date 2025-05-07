@@ -4,6 +4,9 @@
       <option value="javascript">JavaScript</option>
       <option value="typescript">TypeScript</option>
     </select>
+    <div class="user-info" [style.color]="userInfo.color">
+      {{ userInfo.name }}
+    </div>
   </div>
   <div #editorContainer class="code-editor"></div>
 </div>
