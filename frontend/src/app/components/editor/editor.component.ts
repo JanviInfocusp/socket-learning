@@ -43,7 +43,6 @@ export class EditorComponent implements AfterViewInit {
   }
 
   private initializeEditor() {
-    // Create custom syntax highlighting
     const syntaxStyles = HighlightStyle.define([
       { tag: tags.keyword, color: "#0000ff", fontWeight: "bold" },
       { tag: tags.comment, color: "#008000", fontStyle: "italic" },
@@ -72,9 +71,7 @@ export class EditorComponent implements AfterViewInit {
         syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
         syntaxHighlighting(syntaxStyles),
         EditorView.theme({
-          "&": {
-            height: "100%"
-          },
+          "&": { height: "100%" },
           ".cm-scroller": {
             fontFamily: "'Consolas', 'Monaco', 'Courier New', monospace",
             fontSize: "14px",
@@ -83,7 +80,6 @@ export class EditorComponent implements AfterViewInit {
         }),
         EditorView.lineWrapping,
         EditorState.tabSize.of(2),
-        EditorState.allowMultipleSelections.of(true),
         keymap.of([
           ...defaultKeymap,
           ...historyKeymap,
@@ -96,8 +92,6 @@ export class EditorComponent implements AfterViewInit {
         EditorView.updateListener.of(update => {
           if (update.docChanged) {
             const content = update.state.doc.toString();
-            const cursorPos = update.state.selection.main.head;
-
             if (content !== this.ytext.toString()) {
               const prevContent = this.ytext.toString();
               let start = 0;
@@ -105,14 +99,10 @@ export class EditorComponent implements AfterViewInit {
                      prevContent[start] === content[start]) {
                 start++;
               }
-
               let deleteCount = prevContent.length - start;
               let insertText = content.slice(start);
-
               this.ytext.delete(start, deleteCount);
-              if (insertText) {
-                this.ytext.insert(start, insertText);
-              }
+              if (insertText) this.ytext.insert(start, insertText);
             }
           }
         })
