@@ -11,15 +11,25 @@
     align-items: center;
 
     .user-info {
+      font-family: 'Fira Code', 'Consolas', monospace;
       font-weight: bold;
       padding: 4px 8px;
       border-radius: 4px;
       background: rgba(0,0,0,0.05);
+      font-size: 13px;
     }
   }
 
   .code-editor {
     flex: 1;
     overflow: auto;
+
+    :global(.remote-selection) {
+      position: relative;
+      pointer-events: none;
+      opacity: 1 !important;
+      background-color: rgba(0, 0, 0, 0.2);
+      mix-blend-mode: multiply;
+    }
   }
 }

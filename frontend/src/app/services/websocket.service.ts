@@ -35,6 +35,15 @@ export class WebsocketService {
     return colors[Math.floor(Math.random() * colors.length)];
   }
 
+  private hexToRgb(hex: string) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : null;
+  }
+
   getDoc() {
     return this.doc;
   }
@@ -44,6 +53,31 @@ export class WebsocketService {
   }
 
   getUserInfo() {
-    return this.provider.awareness.getLocalState()?.['user'];
+    const user = this.provider.awareness.getLocalState()?.['user'];
+    const rgb = this.hexToRgb(user.color);
+    return {
+      ...user,
+      name: `<${user.name}>`,
+      rgbColor: rgb ? `${rgb.r}, ${rgb.g}, ${rgb.b}` : '0, 0, 0'
+    };
+  }
+
+  updateSelection(from: number, to: number) {
+    const user = this.provider.awareness.getLocalState()?.['user'];
+    this.provider.awareness.setLocalStateField('selection', { from, to, color: user.color });
+  }
+
+  onSelectionChange(callback: (selections: any[]) => void) {
+    this.provider.awareness.on('change', () => {
+      const states = Array.from(this.provider.awareness.getStates().values());
+      const selections = states
+        .filter(state => state['selection'] && state['user'])
+        .map(state => ({
+          from: state['selection'].from,
+          to: state['selection'].to,
+          color: state['user'].color
+        }));
+      callback(selections);
+    });
   }
 }
