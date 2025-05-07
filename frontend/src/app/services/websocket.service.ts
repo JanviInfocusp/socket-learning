@@ -64,7 +64,12 @@ export class WebsocketService {
 
   updateSelection(from: number, to: number) {
     const user = this.provider.awareness.getLocalState()?.['user'];
-    this.provider.awareness.setLocalStateField('selection', { from, to, color: user.color });
+    this.provider.awareness.setLocalStateField('selection', { 
+      from, 
+      to, 
+      color: user.color,
+      name: user.name 
+    });
   }
 
   onSelectionChange(callback: (selections: any[]) => void) {
@@ -73,9 +78,10 @@ export class WebsocketService {
       const selections = states
         .filter(state => state['selection'] && state['user'])
         .map(state => ({
-          from: state['selection'].from,
-          to: state['selection'].to,
-          color: state['user'].color
+          from: state['selection']['from'],
+          to: state['selection']['to'],
+          color: state['user']['color'],
+          name: state['user']['name']
         }));
       callback(selections);
     });

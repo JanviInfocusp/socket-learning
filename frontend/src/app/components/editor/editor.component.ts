@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { WebsocketService } from '../../services/websocket.service';
 import * as Y from 'yjs';
 import { EditorState, Transaction, StateEffect, StateField } from '@codemirror/state';
-import { EditorView, keymap, lineNumbers, highlightActiveLineGutter, highlightSpecialChars, Decoration, DecorationSet } from '@codemirror/view';
+import { EditorView, keymap, lineNumbers, highlightActiveLineGutter, highlightSpecialChars, Decoration, DecorationSet, WidgetType } from '@codemirror/view';
 import { javascript } from '@codemirror/lang-javascript';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { tags } from '@lezer/highlight';
@@ -20,7 +20,7 @@ import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap, C
 import { lintKeymap } from '@codemirror/lint';
 
 // Define the shared selection effect and state field at the top level
-const addSelectionEffect = StateEffect.define<{ from: number; to: number; color: string }[]>();
+const addSelectionEffect = StateEffect.define<{ from: number; to: number; color: string; name: string }[]>();
 
 const sharedSelectionsField = StateField.define<DecorationSet>({
   create() {
@@ -30,16 +30,44 @@ const sharedSelectionsField = StateField.define<DecorationSet>({
     selections = selections.map(tr.changes);
     for (let e of tr.effects) {
       if (e.is(addSelectionEffect)) {
-        return Decoration.set(
-          e.value.map(sel =>
-            Decoration.mark({
+        const decorations = [];
+        for (const sel of e.value) {
+          // Add selection highlight if there is a selection range
+          if (sel.from !== sel.to) {
+            decorations.push(Decoration.mark({
               class: 'remote-selection',
               attributes: {
                 style: `background-color: ${sel.color}40`
               }
-            }).range(sel.from, sel.to)
-          )
-        );
+            }).range(sel.from, sel.to));
+          }
+          // Add cursor widget at the current position
+          decorations.push(Decoration.widget({
+            widget: new class extends WidgetType {
+              override toDOM() {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'remote-cursor-wrapper';
+                wrapper.style.left = '0';
+                
+                const cursor = document.createElement('div');
+                cursor.className = 'remote-cursor';
+                cursor.style.backgroundColor = sel.color;
+                
+                const tooltip = document.createElement('div');
+                tooltip.className = 'cursor-tooltip';
+                tooltip.textContent = sel.name;
+                tooltip.style.backgroundColor = sel.color;
+                
+                wrapper.appendChild(cursor);
+                wrapper.appendChild(tooltip);
+                return wrapper;
+              }
+              override ignoreEvent() { return true; }
+            },
+            side: 1
+          }).range(sel.to));
+        }
+        return Decoration.set(decorations, true);
       }
     }
     return selections;
@@ -82,14 +110,13 @@ export class EditorComponent implements AfterViewInit {
         .map(sel => ({
           from: sel.from,
           to: sel.to,
-          color: sel.color
+          color: sel.color,
+          name: sel.name.replace(/[<>]/g, '') // Remove angle brackets for tooltip
         }));
 
-      if (remoteSelections.length > 0) {
-        this.editorView.dispatch({
-          effects: addSelectionEffect.of(remoteSelections)
-        });
-      }
+      this.editorView.dispatch({
+        effects: addSelectionEffect.of(remoteSelections)
+      });
     });
   }
 
@@ -152,8 +179,46 @@ export class EditorComponent implements AfterViewInit {
             backgroundColor: `rgba(${this.userInfo.rgbColor}, 0.07) !important`
           },
           ".remote-selection": {
-            borderRadius: "2px",
-            transition: "background-color 0.3s ease"
+            backgroundColor: "transparent",
+            borderRadius: "2px"
+          },
+          ".remote-cursor-wrapper": {
+            position: "relative",
+            display: "inline-block",
+            height: "1.2em",
+            width: 0,
+            overflow: "visible"
+          },
+          ".remote-cursor-container": {
+            position: "relative",
+            padding: 0,
+            margin: 0,
+            width: 0,
+            height: 0
+          },
+          ".remote-cursor": {
+            position: "absolute",
+            width: "2px",
+            height: "1.6em",
+            backgroundColor: "inherit",
+            zIndex: "100"
+          },
+          ".cursor-tooltip": {
+            position: "absolute",
+            top: "-1.5em",
+            left: "0",
+            padding: "2px 4px",
+            borderRadius: "4px",
+            color: "#fff",
+            fontSize: "12px",
+            whiteSpace: "nowrap"
+          },
+          ".cm-line": { 
+            padding: "0 4px",
+            lineHeight: "1.6"
+          },
+          ".cm-content": {
+            position: "relative"  // Add this line
           }
         }),
         EditorView.lineWrapping,
@@ -169,12 +234,13 @@ export class EditorComponent implements AfterViewInit {
         ]),
         EditorView.updateListener.of(update => {
           if (update.docChanged) {
-            const content = update.state.doc.toString();
-            if (content !== this.ytext.toString()) {
+            // Simplified change handling
+            this.ytext.doc?.transact(() => {
               this.ytext.delete(0, this.ytext.length);
-              this.ytext.insert(0, content);
-            }
+              this.ytext.insert(0, update.state.doc.toString());
+            });
           }
+          // Selection handling
           if (update.selectionSet) {
             const { from, to } = update.state.selection.main;
             this.wsService.updateSelection(from, to);
@@ -189,16 +255,12 @@ export class EditorComponent implements AfterViewInit {
       parent: this.editorContainer.nativeElement
     });
 
-    this.ytext.observe(event => {
+    this.ytext.observe(() => {
+      // Simplified ytext observation
       const content = this.ytext.toString();
       if (content !== this.editorView?.state.doc.toString()) {
         this.editorView?.dispatch({
-          changes: {
-            from: 0,
-            to: this.editorView.state.doc.length,
-            insert: content
-          },
-          annotations: [Transaction.remote.of(true)]
+          changes: { from: 0, to: this.editorView.state.doc.length, insert: content }
         });
       }
     });
