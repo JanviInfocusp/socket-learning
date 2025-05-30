@@ -18,6 +18,7 @@ import {
 } from '@codemirror/language';
 import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap, CompletionContext } from '@codemirror/autocomplete';
 import { lintKeymap } from '@codemirror/lint';
+import { yCollab } from 'y-codemirror.next'
 
 @Component({
   selector: 'app-editor',
@@ -70,6 +71,7 @@ export class EditorComponent implements AfterViewInit {
         this.getLanguageExtension(),
         syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
         syntaxHighlighting(syntaxStyles),
+        yCollab(this.ytext, this.wsService.getProvider().awareness),
         EditorView.theme({
           "&": { height: "100%" },
           ".cm-scroller": {
