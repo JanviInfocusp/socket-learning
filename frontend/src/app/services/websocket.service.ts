@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
-import { userColor } from '../constants/user_colors';
+import { userColor, userName } from '../constants/user_constants';
 
 @Injectable({
   providedIn: 'root'
@@ -18,7 +18,7 @@ export class WebsocketService {
       this.doc
     );
     this.provider.awareness.setLocalStateField('user', {
-      name: 'User ' + Math.floor(Math.random() * 100),
+      name: userName,
       color: userColor.color,
       light: userColor.light,
     });

@@ -1,5 +1,8 @@
 <div class="editor-container">
   <div class="toolbar">
+    <div class="user-info">
+      <span class="username" [style.backgroundColor]="currentUserColor">You: {{currentUserName}}</span>
+    </div>
     <select [(ngModel)]="selectedLanguage" (change)="onLanguageChange()">
       <option value="javascript">JavaScript</option>
       <option value="typescript">TypeScript</option>

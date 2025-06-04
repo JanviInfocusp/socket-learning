@@ -6,6 +6,18 @@
   .toolbar {
     padding: 8px;
     border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .user-info {
+      .username {
+        padding: 4px 8px;
+        border-radius: 4px;
+        color: white;
+        font-size: 14px;
+      }
+    }
   }
 
   .code-editor {

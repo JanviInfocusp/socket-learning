@@ -18,7 +18,8 @@ import {
 } from '@codemirror/language';
 import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap, CompletionContext } from '@codemirror/autocomplete';
 import { lintKeymap } from '@codemirror/lint';
-import { yCollab } from 'y-codemirror.next'
+import { yCollab } from 'y-codemirror.next';
+import { userColor, userName } from '../../constants/user_constants';
 
 @Component({
   selector: 'app-editor',
@@ -32,6 +33,8 @@ export class EditorComponent implements AfterViewInit {
   private ytext: Y.Text;
   private editorView?: EditorView;
   selectedLanguage = 'javascript';
+  currentUserName = userName;
+  currentUserColor = userColor.color;
 
   constructor(private wsService: WebsocketService) {
     this.ytext = this.wsService.getDoc().getText('collaborative-editor');
@@ -75,7 +78,7 @@ export class EditorComponent implements AfterViewInit {
         EditorView.theme({
           "&": { height: "100%" },
           ".cm-scroller": {
-            fontFamily: "'Consolas', 'Monaco', 'Courier New', monospace",
+            fontFamily: "'Fira Code', monospace",
             fontSize: "14px",
             lineHeight: "1.5"
           }
