@@ -32,9 +32,11 @@ export class EditorComponent implements AfterViewInit {
   private ytext: Y.Text;
   private editorView?: EditorView;
   selectedLanguage = 'javascript';
+  userInfo: Record<string, any> | null = null;
 
   constructor(private wsService: WebsocketService) {
     this.ytext = this.wsService.getDoc().getText('collaborative-editor');
+    this.userInfo = this.wsService.getProvider().awareness.getLocalState()?.['user'];
   }
 
   ngAfterViewInit() {
@@ -74,6 +76,10 @@ export class EditorComponent implements AfterViewInit {
         yCollab(this.ytext, this.wsService.getProvider().awareness),
         EditorView.theme({
           "&": { height: "100%" },
+          ".cm-content": {
+            fontSize: "20px",
+            paddingTop: "16px"
+          },
           ".cm-scroller": {
             fontFamily: "'Consolas', 'Monaco', 'Courier New', monospace",
             fontSize: "14px",

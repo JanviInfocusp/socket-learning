@@ -1,4 +1,12 @@
 <div class="editor-container">
+  <div class="doc-actions">
+    @if (userInfo) {
+      <div>
+        <span>You: </span>
+        <span [style.backgroundColor]="userInfo['color']">{{ userInfo['name'] }}</span>
+      </div>
+    }
+  </div>
   <div class="toolbar">
     <select [(ngModel)]="selectedLanguage" (change)="onLanguageChange()">
       <option value="javascript">JavaScript</option>

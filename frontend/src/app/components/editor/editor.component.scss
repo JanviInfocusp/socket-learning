@@ -1,11 +1,17 @@
 .editor-container {
-  height: 100vh;
   display: flex;
   flex-direction: column;
+  height: 100vh;
+
+  .doc-actions {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px;
+  }
   
   .toolbar {
-    padding: 8px;
     border-bottom: 1px solid #e0e0e0;
+    padding: 8px;
   }
 
   .code-editor {
