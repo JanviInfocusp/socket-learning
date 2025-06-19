@@ -16,7 +16,7 @@ import {
   foldKeymap,
   syntaxHighlighting
 } from '@codemirror/language';
-import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap, CompletionContext } from '@codemirror/autocomplete';
+import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
 import { lintKeymap } from '@codemirror/lint';
 import { yCollab } from 'y-codemirror.next'
 
@@ -91,45 +91,12 @@ export class EditorComponent implements AfterViewInit {
           ...lintKeymap,
           indentWithTab
         ]),
-        EditorView.updateListener.of(update => {
-          if (update.docChanged) {
-            const content = update.state.doc.toString();
-            if (content !== this.ytext.toString()) {
-              const prevContent = this.ytext.toString();
-              let start = 0;
-              while (start < Math.min(prevContent.length, content.length) &&
-                     prevContent[start] === content[start]) {
-                start++;
-              }
-              let deleteCount = prevContent.length - start;
-              let insertText = content.slice(start);
-              this.ytext.delete(start, deleteCount);
-              if (insertText) this.ytext.insert(start, insertText);
-            }
-          }
-        })
       ]
     });
 
     this.editorView = new EditorView({
       state,
       parent: this.editorContainer.nativeElement
-    });
-
-    this.ytext.observe(event => {
-      const content = this.ytext.toString();
-      if (content !== this.editorView?.state.doc.toString()) {
-        const cursorPos = this.editorView?.state.selection.main.head || 0;
-
-        this.editorView?.dispatch({
-          changes: {
-            from: 0,
-            to: this.editorView.state.doc.length,
-            insert: content
-          },
-          selection: { anchor: cursorPos, head: cursorPos }
-        });
-      }
     });
   }
 
