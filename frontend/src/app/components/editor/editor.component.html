@@ -14,4 +14,14 @@
     </select>
   </div>
   <div #editorContainer class="code-editor"></div>
+  <button (click)="toggleOnlineUsersList()" class="toggle-users-button">
+    {{ showOnlineUsersList ? 'Hide' : 'Show'}} online users
+  </button>
+  <ol [style.display]="showOnlineUsersList ? 'block' : 'none'">
+    @for (user of otherOnlineUsers; track user['name']) {
+      <li>
+        <span [style.backgroundColor]="user['color']">{{ user['name'] }}</span>
+      </li>
+    }
+  </ol>
 </div>

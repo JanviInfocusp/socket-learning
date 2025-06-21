@@ -33,16 +33,28 @@ export class EditorComponent implements AfterViewInit {
   private editorView?: EditorView;
   selectedLanguage = 'javascript';
   userInfo: Record<string, any> | null = null;
+  otherOnlineUsers: Record<string, any>[] = [];
+  showOnlineUsersList = false;
 
   constructor(private wsService: WebsocketService) {
     this.ytext = this.wsService.getDoc().getText('collaborative-editor');
     this.userInfo = this.wsService.getProvider().awareness.getLocalState()?.['user'];
+    this.wsService.getProvider().awareness.on('change', () => {
+      const states = [...this.wsService.getProvider().awareness.getStates().values()];
+      this.otherOnlineUsers = states
+        .map(state => state['user'])
+        .filter(user => !!user && user['name'] !== this.userInfo?.['name']);
+    });
   }
 
   ngAfterViewInit() {
     if (this.editorContainer?.nativeElement) {
       this.initializeEditor();
     }
+  }
+
+  toggleOnlineUsersList() {
+    this.showOnlineUsersList = !this.showOnlineUsersList;
   }
 
   private initializeEditor() {
