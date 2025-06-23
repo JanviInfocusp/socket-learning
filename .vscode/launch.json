@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Server",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/server/server.js",
+            "console": "integratedTerminal"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Launch Full App",
+            "configurations": ["Launch Server"],
+            "preLaunchTask": "Start Angular App"
+        }
+    ]
+}
