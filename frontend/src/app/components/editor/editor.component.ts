@@ -1,11 +1,12 @@
-import { Component, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
+import { Component, AfterViewInit, ElementRef, ViewChild, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { WebsocketService } from '../../services/websocket.service';
 import * as Y from 'yjs';
+import { UndoManager } from 'yjs';
 import { EditorState } from '@codemirror/state';
 import { EditorView, keymap, lineNumbers, highlightActiveLineGutter, highlightSpecialChars } from '@codemirror/view';
 import { javascript } from '@codemirror/lang-javascript';
-import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
+import { defaultKeymap, indentWithTab } from '@codemirror/commands';
 import { tags } from '@lezer/highlight';
 import {
   HighlightStyle,
@@ -27,10 +28,11 @@ import { yCollab } from 'y-codemirror.next'
   templateUrl: './editor.component.html',
   styleUrls: ['./editor.component.scss']
 })
-export class EditorComponent implements AfterViewInit {
+export class EditorComponent implements AfterViewInit, OnDestroy {
   @ViewChild('editorContainer') editorContainer!: ElementRef;
   private ytext: Y.Text;
   private editorView?: EditorView;
+  private undoManager: UndoManager;
   selectedLanguage = 'javascript';
   userInfo: Record<string, any> | null = null;
   otherOnlineUsers: Record<string, any>[] = [];
@@ -38,6 +40,10 @@ export class EditorComponent implements AfterViewInit {
 
   constructor(private wsService: WebsocketService) {
     this.ytext = this.wsService.getDoc().getText('collaborative-editor');
+    // Initialize the undo manager with proper configuration
+    this.undoManager = new UndoManager(this.ytext, {
+      trackedOrigins: new Set([null])
+    });
     this.userInfo = this.wsService.getProvider().awareness.getLocalState()?.['user'];
     this.wsService.getProvider().awareness.on('change', () => {
       const states = [...this.wsService.getProvider().awareness.getStates().values()];
@@ -76,7 +82,6 @@ export class EditorComponent implements AfterViewInit {
         lineNumbers(),
         highlightActiveLineGutter(),
         highlightSpecialChars(),
-        history(),
         foldGutter(),
         indentOnInput(),
         bracketMatching(),
@@ -85,7 +90,9 @@ export class EditorComponent implements AfterViewInit {
         this.getLanguageExtension(),
         syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
         syntaxHighlighting(syntaxStyles),
-        yCollab(this.ytext, this.wsService.getProvider().awareness),
+        yCollab(this.ytext, this.wsService.getProvider().awareness, {
+          undoManager: this.undoManager
+        }),
         EditorView.theme({
           "&": { height: "100%" },
           ".cm-content": {
@@ -102,12 +109,41 @@ export class EditorComponent implements AfterViewInit {
         EditorState.tabSize.of(2),
         keymap.of([
           ...defaultKeymap,
-          ...historyKeymap,
           ...foldKeymap,
           ...completionKeymap,
           ...closeBracketsKeymap,
           ...lintKeymap,
-          indentWithTab
+          indentWithTab,
+          {
+            key: "Mod-z",
+            run: () => {
+              if (this.undoManager.canUndo()) {
+                this.undoManager.undo();
+                return true;
+              }
+              return false;
+            }
+          },
+          {
+            key: "Mod-y",
+            run: () => {
+              if (this.undoManager.canRedo()) {
+                this.undoManager.redo();
+                return true;
+              }
+              return false;
+            }
+          },
+          {
+            key: "Mod-Shift-z",
+            run: () => {
+              if (this.undoManager.canRedo()) {
+                this.undoManager.redo();
+                return true;
+              }
+              return false;
+            }
+          }
         ]),
       ]
     });
@@ -134,6 +170,15 @@ export class EditorComponent implements AfterViewInit {
       const content = this.editorView.state.doc.toString();
       this.editorView.destroy();
       this.initializeEditor();
+    }
+  }
+
+  ngOnDestroy() {
+    if (this.undoManager) {
+      this.undoManager.destroy();
+    }
+    if (this.editorView) {
+      this.editorView.destroy();
     }
   }
 }
