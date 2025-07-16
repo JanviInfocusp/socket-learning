@@ -11,11 +11,11 @@ wss.on('connection', setupWSConnection);
 
 // Enable CORS for Angular dev server
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'http://localhost:4200');
+  res.header('Access-Control-Allow-Origin', '*');
   next();
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+server.listen(PORT, `0.0.0.0`, () => {
   console.log(`WebSocket server running on port ${PORT}`);
 });

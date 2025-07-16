@@ -13,7 +13,7 @@ export class WebsocketService {
   constructor() {
     this.doc = new Y.Doc();
     this.provider = new WebsocketProvider(
-      'ws://localhost:3000',
+      'ws://192.168.20.46:3000',
       'collaborative-editor',
       this.doc
     );
