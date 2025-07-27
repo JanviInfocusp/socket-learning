@@ -13,7 +13,7 @@ export class WebsocketService {
   constructor() {
     this.doc = new Y.Doc();
     this.provider = new WebsocketProvider(
-      'ws://192.168.20.46:3000',
+      this.getServerUrl(),
       'collaborative-editor',
       this.doc
     );
@@ -22,6 +22,12 @@ export class WebsocketService {
       color: userColor.color,
       light: userColor.light,
     });
+  }
+
+  getServerUrl() {
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsHost = window.location.host;
+    return `${wsProtocol}//${wsHost}`;
   }
 
   getDoc() {
