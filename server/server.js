@@ -10,7 +10,7 @@ const wss = new WebSocket.Server({ server });
 
 wss.on('connection', setupWSConnection);
 
-const frontendBuildPath = path.join(__dirname, '../dist/frontend/browser');
+const frontendBuildPath = path.join(__dirname, '../dist/frontend');
 app.use(express.static(frontendBuildPath));
 
 // Enable CORS for Angular dev server
