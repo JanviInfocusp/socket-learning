@@ -1,29 +1,28 @@
-const express = require('express');
-const http = require('http');
-const path = require('path');
-const { setupWSConnection } = require('y-websocket/bin/utils');
-const WebSocket = require('ws');
+// Import necessary modules.
+const express = require("express");
+const http = require("http");
+const path = require("path");
+const { setupWSConnection } = require("y-websocket/bin/utils");
+const WebSocket = require("ws");
 
+// Set up the HTTP and Websocket servers. Both run on the same port.
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
-wss.on('connection', setupWSConnection);
-
-const frontendBuildPath = path.join(__dirname, '../dist/frontend/browser');
-app.use(express.static(frontendBuildPath));
-
-// Enable CORS for Angular dev server
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  next();
-});
-
-app.get('*', (req, res) => {
-  res.sendFile(path.join(frontendBuildPath, 'index.html'));
-});
-
+// Start server listening for connections on a specified port.
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, `0.0.0.0`, () => {
-  console.log(`WebSocket server running on port ${PORT}`);
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
+
+// Serve the frontend application.
+const frontendBuildPath = path.join(__dirname, "../dist/frontend/browser");
+app.use(express.static(frontendBuildPath));
+app.get("*", (req, res) => {
+  res.sendFile(path.join(frontendBuildPath, "index.html"));
+});
+
+// Once the websocket connection is established, set up support to faciliate syncing shared doc
+// and awareness with connected clients.
+wss.on("connection", setupWSConnection);

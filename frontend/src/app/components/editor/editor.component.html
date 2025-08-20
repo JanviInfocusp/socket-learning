@@ -8,9 +8,8 @@
     }
   </div>
   <div class="toolbar">
-    <select [(ngModel)]="selectedLanguage" (change)="onLanguageChange()">
+    <select [(ngModel)]="selectedLanguage">
       <option value="javascript">JavaScript</option>
-      <option value="typescript">TypeScript</option>
     </select>
   </div>
   <div #editorContainer class="code-editor"></div>
