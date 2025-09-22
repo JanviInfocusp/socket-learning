@@ -1,0 +1,39 @@
+.editor-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  .doc-actions {
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-bottom: 1px solid #ccc;
+  }
+
+  .toolbar {
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-bottom: 1px solid #ccc;
+  }
+
+  .code-editor {
+    flex-grow: 1;
+    overflow: auto;
+    border: 1px solid #ccc;
+  }
+
+  .toggle-users-button {
+    margin: 10px;
+    padding: 10px;
+    cursor: pointer;
+  }
+
+  ol {
+    margin: 10px;
+  }
+
+  li span {
+    padding: 2px 5px;
+    border-radius: 3px;
+    color: white;
+  }
